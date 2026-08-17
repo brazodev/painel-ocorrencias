@@ -246,7 +246,7 @@
 </head>
 <body>
 
-<!-- TELA 1: LOGIN CENTRALIZADO (Padrão) -->
+<!-- TELA 1: LOGIN CENTRALIZADO -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="login-icon">
@@ -270,7 +270,7 @@
   </div>
 </div>
 
-<!-- TELA 2: FORMULÁRIO E DASHBOARD (Oculta até login autorizados) -->
+<!-- TELA 2: FORMULÁRIO E DASHBOARD -->
 <div id="appScreen" class="wrap" style="display:none;">
 
   <div class="user-bar">
@@ -396,10 +396,10 @@ async function validateAndLogin(token) {
     const json = await res.json();
 
     if (json.erro) {
-      // E-mail não autorizado
+      // E-mail não autorizado (exibe a mensagem exata do Apps Script)
       sessionStorage.removeItem('g_token');
       googleToken = null;
-      showLoginAlert(`⚠️ <strong>Acesso Negado:</strong> O e-mail <strong>${email}</strong> não tem permissão para acessar este sistema. Entre com uma conta autorizada.`, 'error');
+      showLoginAlert(`⚠️ <strong>Acesso Negado:</strong> ${json.erro}`, 'error');
     } else {
       // Autorizado com sucesso
       sessionStorage.setItem('g_token', token);
@@ -409,10 +409,9 @@ async function validateAndLogin(token) {
     }
   } catch (err) {
     console.error("Erro ao verificar autorização:", err);
-    sessionStorage.setItem('g_token', token);
-    googleToken = token;
-    hideLoginAlert();
-    enterApp(email);
+    sessionStorage.removeItem('g_token');
+    googleToken = null;
+    showLoginAlert(`⚠️ Erro de conexão ao validar autorização: ${err.message}`, 'error');
   }
 }
 
@@ -670,4 +669,4 @@ function initApp(){
 }
 </script>
 </body>
-</html>
+</html>git add .
