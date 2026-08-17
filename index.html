@@ -67,7 +67,12 @@
   .status-sub{color:rgba(45,50,119,.65);font-size:12px;font-family:var(--mono);margin-top:2px;}
   .status-right{display:flex;gap:24px;align-items:baseline;z-index:1;}
   .stat{text-align:right;}
-  .stat-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;color:var(--navy);}
+  .stat-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;color:var(--navy);transition:opacity .2s;}
+  .stat-num.loading{animation:statPulse 1s ease-in-out infinite;}
+  @keyframes statPulse{
+    0%,100%{opacity:1;}
+    50%{opacity:.35;}
+  }
   .stat-label{font-size:10px;color:rgba(45,50,119,.65);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;font-weight:600;}
 
   /* ---------- form panel ---------- */
@@ -269,6 +274,12 @@ function updateClock(){
 updateClock();
 setInterval(updateClock, 1000*30);
 
+function setStatsLoading(isLoading){
+  ['statHoje','statSemana','statTotal'].forEach(id=>{
+    document.getElementById(id).classList.toggle('loading', isLoading);
+  });
+}
+
 async function loadOccurrences(){
   try {
     const res = await fetch(API_URL);
@@ -325,6 +336,7 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
 
   try{
     await saveOccurrence(occ);
+    setStatsLoading(true);
     await loadOccurrences();
     msg.style.color='var(--green)';
     msg.textContent = 'Ocorrência registrada com sucesso!';
@@ -333,6 +345,7 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
     document.getElementById('fResponsavel').value = '';
     document.getElementById('fData').value = todayISO();
     updateStatusStrip();
+    setStatsLoading(false);
   }catch(e){
     msg.style.color='var(--red)';
     msg.textContent = 'Erro ao salvar. Tente novamente.';
@@ -361,8 +374,10 @@ populateTipos();
   // Mantém os contadores atualizados em tempo real (ex: novas ocorrências
   // registradas por outras pessoas) e garante a virada automática do dia/semana.
   setInterval(async () => {
+    setStatsLoading(true);
     await loadOccurrences();
     updateStatusStrip();
+    setStatsLoading(false);
   }, 30000);
 })();
 </script>
