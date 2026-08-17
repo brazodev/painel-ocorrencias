@@ -282,7 +282,7 @@ function setStatsLoading(isLoading){
 
 async function loadOccurrences(){
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL + '?t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
     occurrences = Array.isArray(data) ? data : [];
     occurrences.sort((a,b)=> (b.data + (b.criadoEm || '')).localeCompare(a.data + (a.criadoEm || '')));
@@ -336,14 +336,22 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
 
   try{
     await saveOccurrence(occ);
-    setStatsLoading(true);
-    await loadOccurrences();
+
+    // Atualização otimista: soma a ocorrência localmente na hora,
+    // sem esperar a releitura da planilha, para o contador reagir na hora.
+    occurrences.push(occ);
+    updateStatusStrip();
+
     msg.style.color='var(--green)';
     msg.textContent = 'Ocorrência registrada com sucesso!';
     document.getElementById('fDescricao').value = '';
     document.getElementById('fVaga').value = '';
     document.getElementById('fResponsavel').value = '';
     document.getElementById('fData').value = todayISO();
+
+    // Sincroniza com a planilha em segundo plano para garantir consistência.
+    setStatsLoading(true);
+    await loadOccurrences();
     updateStatusStrip();
     setStatsLoading(false);
   }catch(e){
