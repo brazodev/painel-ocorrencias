@@ -304,13 +304,36 @@ function normalizeDate(raw){
 async function loadOccurrences(){
   try {
     const res = await fetch(API_URL + '?t=' + Date.now(), { cache: 'no-store' });
-    const data = await res.json();
-    occurrences = Array.isArray(data) ? data : [];
-    occurrences.forEach(o => { o.data = normalizeDate(o.data); });
-    occurrences.sort((a,b)=> (b.data + (b.criadoEm || '')).localeCompare(a.data + (a.criadoEm || '')));
+    const raw = await res.text();
+
+    let parsed;
+    try{
+      parsed = JSON.parse(raw);
+    }catch(parseErr){
+      console.error('Resposta da planilha não é JSON válido:', raw);
+      return; // mantém os dados que já estavam carregados, não zera
+    }
+
+    // Aceita tanto um array puro quanto respostas embrulhadas em
+    // { data: [...] } / { rows: [...] } / { result: [...] }
+    let list = null;
+    if(Array.isArray(parsed)) list = parsed;
+    else if(parsed && Array.isArray(parsed.data)) list = parsed.data;
+    else if(parsed && Array.isArray(parsed.rows)) list = parsed.rows;
+    else if(parsed && Array.isArray(parsed.result)) list = parsed.result;
+
+    if(list === null){
+      console.error('Formato de resposta inesperado da planilha:', parsed);
+      return; // mantém os dados que já estavam carregados, não zera
+    }
+
+    list.forEach(o => { o.data = normalizeDate(o.data); });
+    list.sort((a,b)=> ((b.data||'') + (b.criadoEm || '')).localeCompare((a.data||'') + (a.criadoEm || '')));
+    occurrences = list;
+    console.log('Ocorrências carregadas:', occurrences.length);
   } catch(e) {
-    console.error('Erro ao carregar ocorrências:', e);
-    occurrences = [];
+    console.error('Erro ao carregar ocorrências (mantendo dados atuais):', e);
+    // não zera occurrences em caso de falha de rede
   }
 }
 
