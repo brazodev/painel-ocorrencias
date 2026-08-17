@@ -37,6 +37,122 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--body);}
   body{min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+  /* ---------- TELA DE LOGIN (CENTRALIZADA) ---------- */
+  .login-screen{
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg);
+  }
+  .login-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 40px 32px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  }
+  .login-icon{
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--ml-yellow) 0%, var(--ml-yellow-deep) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    box-shadow: 0 4px 12px rgba(255,230,0,.4);
+  }
+  .login-icon svg{
+    width: 28px;
+    height: 28px;
+    color: var(--navy);
+  }
+  .login-title{
+    font-family: var(--disp);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--navy);
+    margin: 0 0 6px;
+  }
+  .login-subtitle{
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 28px;
+    line-height: 1.5;
+  }
+  .login-btn-container{
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .login-alert{
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .login-alert.error{
+    background: rgba(255, 69, 69, 0.08);
+    border: 1px solid var(--red);
+    color: #c53030;
+  }
+  .login-alert.loading{
+    background: rgba(52, 131, 250, 0.08);
+    border: 1px solid var(--blue);
+    color: var(--blue-dark);
+  }
+
+  /* ---------- BARRA DE USUARIO LOGADO ---------- */
+  .user-bar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .user-bar-info{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .user-bar-badge{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .user-bar button{
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .user-bar button:hover{
+    background: rgba(255,69,69,0.08);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* ---------- CONTEUDO PRINCIPAL ---------- */
   .wrap{max-width:820px;margin:0 auto;padding:24px 20px 60px;}
 
   /* ---------- status strip ---------- */
@@ -129,7 +245,41 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<!-- TELA 1: LOGIN CENTRALIZADO (Padrão) -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1 class="login-title">Registro de Ocorrências</h1>
+    <p class="login-subtitle">Processo Seletivo — Entre com uma conta Google autorizada para ter acesso ao sistema.</p>
+    
+    <div class="login-btn-container">
+      <div id="g_id_onload"
+           data-client_id="315923477453-9ij8ib9rkplr8dofdps5rohchjbm44mm.apps.googleusercontent.com"
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-size="large"></div>
+    </div>
+
+    <div id="loginAlert" class="login-alert" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- TELA 2: FORMULÁRIO E DASHBOARD (Oculta até login autorizados) -->
+<div id="appScreen" class="wrap" style="display:none;">
+
+  <div class="user-bar">
+    <div class="user-bar-info">
+      <span class="user-bar-badge"></span>
+      <span>Conectado como: <strong id="userEmailTag"></strong></span>
+    </div>
+    <button onclick="logoutGoogle()">Sair / Trocar conta</button>
+  </div>
 
   <div class="status-strip">
     <div class="status-left">
@@ -148,18 +298,6 @@
 
   <div class="panel">
     <h2 class="panel-heading">Nova ocorrência</h2>
-
-    <div id="loginArea" style="text-align: center; padding: 20px; background: var(--surface-2); border-radius: 8px; margin-bottom: 20px;">
-      <p style="font-size: 14px; color: var(--muted); margin-top: 0;">Faça login para registrar uma ocorrência.</p>
-      <div id="g_id_onload"
-           data-client_id="315923477453-9ij8ib9rkplr8dofdps5rohchjbm44mm.apps.googleusercontent.com"
-           data-context="signin"
-           data-ux_mode="popup"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-size="large"></div>
-    </div>
 
     <div class="form-grid">
       <div class="field">
@@ -214,22 +352,97 @@
 </div>
 
 <script>
-let googleToken = sessionStorage.getItem('g_token');
-
-if (googleToken) {
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('loginArea').style.display = 'none';
-  });
-}
-
-function handleCredentialResponse(response) {
-  googleToken = response.credential;
-  sessionStorage.setItem('g_token', googleToken);
-  document.getElementById('loginArea').style.display = 'none';
-}
-
 const API_URL = "https://script.google.com/macros/s/AKfycbzhXlRwCbWfd86e-VeVPoGTzH4zKSzAsu6fk-5B_mIPCn84h2aP7dUl_8_5RTKJRqci/exec";
 
+let googleToken = sessionStorage.getItem('g_token');
+
+// Extrai o e-mail codificado no token do Google (JWT)
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+function showLoginAlert(msg, type) {
+  const alertBox = document.getElementById('loginAlert');
+  alertBox.className = `login-alert ${type}`;
+  alertBox.innerHTML = msg;
+  alertBox.style.display = 'block';
+}
+
+function hideLoginAlert() {
+  document.getElementById('loginAlert').style.display = 'none';
+}
+
+// Valida o e-mail no Apps Script antes de liberar a tela
+async function validateAndLogin(token) {
+  const payload = parseJwt(token);
+  const email = payload ? payload.email : 'usuário';
+
+  showLoginAlert(`⏳ Verificando permissões para <strong>${email}</strong>…`, 'loading');
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'checkAuth', token: token })
+    });
+    
+    const json = await res.json();
+
+    if (json.erro) {
+      // E-mail não autorizado
+      sessionStorage.removeItem('g_token');
+      googleToken = null;
+      showLoginAlert(`⚠️ <strong>Acesso Negado:</strong> O e-mail <strong>${email}</strong> não tem permissão para acessar este sistema. Entre com uma conta autorizada.`, 'error');
+    } else {
+      // Autorizado com sucesso
+      sessionStorage.setItem('g_token', token);
+      googleToken = token;
+      hideLoginAlert();
+      enterApp(email);
+    }
+  } catch (err) {
+    console.error("Erro ao verificar autorização:", err);
+    sessionStorage.setItem('g_token', token);
+    googleToken = token;
+    hideLoginAlert();
+    enterApp(email);
+  }
+}
+
+// Transição para a tela principal
+function enterApp(email) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userEmailTag').textContent = email;
+  initApp();
+}
+
+function logoutGoogle() {
+  sessionStorage.removeItem('g_token');
+  googleToken = null;
+  location.reload();
+}
+
+// Executado quando a pessoa faz login no popup do Google
+function handleCredentialResponse(response) {
+  if (response && response.credential) {
+    validateAndLogin(response.credential);
+  }
+}
+
+// Checagem automática caso já esteja logado na sessão
+if (googleToken) {
+  validateAndLogin(googleToken);
+}
+
+// --- LÓGICA DO FORMULÁRIO ---
 const TIPOS = {
   "Candidatos": [
     "Candidato convocado sem necessidade",
@@ -264,10 +477,9 @@ let occurrences = [];
 
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 
-// Retorna a data (ISO) da segunda-feira da semana da data informada
 function mondayOfWeekISO(date){
   const d = new Date(date);
-  const day = d.getDay(); // 0=Dom, 1=Seg, ... 6=Sáb
+  const day = d.getDay();
   const diffToMonday = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diffToMonday);
   return d.toISOString().slice(0,10);
@@ -308,21 +520,16 @@ function setStatsLoading(isLoading){
   });
 }
 
-// Garante que a data sempre volte no formato AAAA-MM-DD, não importa
-// como o Google Sheets devolveu (com hora/fuso, ou em dd/mm/aaaa etc.)
 function normalizeDate(raw){
   if(!raw) return '';
   const s = String(raw).trim();
 
-  // Já está em AAAA-MM-DD (ou começa assim, ex: com hora/fuso anexado)
   const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
 
-  // Formato brasileiro dd/mm/aaaa
   const brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
   if(brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
 
-  // Último recurso: tenta deixar o JS interpretar e reformatar
   const d = new Date(s);
   if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
 
@@ -339,11 +546,9 @@ async function loadOccurrences(){
       parsed = JSON.parse(raw);
     }catch(parseErr){
       console.error('Resposta da planilha não é JSON válido:', raw);
-      return; // mantém os dados que já estavam carregados, não zera
+      return;
     }
 
-    // Aceita tanto um array puro quanto respostas embrulhadas em
-    // { data: [...] } / { rows: [...] } / { result: [...] }
     let list = null;
     if(Array.isArray(parsed)) list = parsed;
     else if(parsed && Array.isArray(parsed.data)) list = parsed.data;
@@ -352,16 +557,14 @@ async function loadOccurrences(){
 
     if(list === null){
       console.error('Formato de resposta inesperado da planilha:', parsed);
-      return; // mantém os dados que já estavam carregados, não zera
+      return;
     }
 
     list.forEach(o => { o.data = normalizeDate(o.data); });
     list.sort((a,b)=> ((b.data||'') + (b.criadoEm || '')).localeCompare((a.data||'') + (a.criadoEm || '')));
     occurrences = list;
-    console.log('Ocorrências carregadas:', occurrences.length);
   } catch(e) {
-    console.error('Erro ao carregar ocorrências (mantendo dados atuais):', e);
-    // não zera occurrences em caso de falha de rede
+    console.error('Erro ao carregar ocorrências:', e);
   }
 }
 
@@ -379,6 +582,13 @@ async function saveOccurrence(occ){
 document.getElementById('btnSalvar').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnSalvar');
   const msg = document.getElementById('formMsg');
+
+  if (!googleToken) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Por favor, faça login primeiro.';
+    return;
+  }
+
   const categoria = document.getElementById('fCategoria').value;
   let tipo = document.getElementById('fTipo').value;
   const tipoOutro = document.getElementById('fTipoOutro').value.trim();
@@ -408,8 +618,6 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
   try{
     await saveOccurrence(occ);
 
-    // Atualização otimista: soma a ocorrência localmente na hora,
-    // sem esperar a releitura da planilha, para o contador reagir na hora.
     occurrences.push(occ);
     updateStatusStrip();
 
@@ -420,14 +628,13 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
     document.getElementById('fResponsavel').value = '';
     document.getElementById('fData').value = todayISO();
 
-    // Sincroniza com a planilha em segundo plano para garantir consistência.
     setStatsLoading(true);
     await loadOccurrences();
     updateStatusStrip();
     setStatsLoading(false);
   }catch(e){
     msg.style.color='var(--red)';
-    msg.textContent = 'Erro ao salvar. Tente novamente!';
+    msg.textContent = e.message || 'Erro ao salvar. Tente novamente!';
     console.error(e);
   }finally{
     btn.disabled = false;
@@ -436,29 +643,31 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
 
 function updateStatusStrip(){
   const today = todayISO();
-  const monday = mondayOfWeekISO(new Date());      // segunda-feira da semana atual
-  const cutoff30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10); // últimos 30 dias
+  const monday = mondayOfWeekISO(new Date());
+  const cutoff30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
 
   document.getElementById('statHoje').textContent = occurrences.filter(o=>o.data===today).length;
   document.getElementById('statSemana').textContent = occurrences.filter(o=>o.data>=monday && o.data<=today).length;
   document.getElementById('statTotal').textContent = occurrences.filter(o=>o.data>=cutoff30 && o.data<=today).length;
 }
 
-// init
-document.getElementById('fData').value = todayISO();
-populateTipos();
-(async () => {
-  await loadOccurrences();
-  updateStatusStrip();
-  // Mantém os contadores atualizados em tempo real (ex: novas ocorrências
-  // registradas por outras pessoas) e garante a virada automática do dia/semana.
-  setInterval(async () => {
-    setStatsLoading(true);
+let appInitialized = false;
+function initApp(){
+  if(appInitialized) return;
+  appInitialized = true;
+  document.getElementById('fData').value = todayISO();
+  populateTipos();
+  (async () => {
     await loadOccurrences();
     updateStatusStrip();
-    setStatsLoading(false);
-  }, 30000);
-})();
+    setInterval(async () => {
+      setStatsLoading(true);
+      await loadOccurrences();
+      updateStatusStrip();
+      setStatsLoading(false);
+    }, 30000);
+  })();
+}
 </script>
 </body>
 </html>
