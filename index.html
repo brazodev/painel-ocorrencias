@@ -382,6 +382,7 @@
   updateClock();
   setInterval(updateClock, 1000*30);
 
+  // Força quebra de cache com parâmetro ?t=
   async function loadOccurrences(){
     try {
       const res = await fetch(API_URL + '?t=' + Date.now());
@@ -446,6 +447,7 @@
       document.getElementById('fResponsavel').value = '';
       document.getElementById('fData').value = todayISO();
       
+      // Atualiza os componentes do painel após salvar
       updateStatusStrip();
       renderCards();
       renderCharts();
