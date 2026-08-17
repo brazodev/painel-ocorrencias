@@ -427,7 +427,7 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
     setStatsLoading(false);
   }catch(e){
     msg.style.color='var(--red)';
-    msg.textContent = 'Erro ao salvar. Tente novamente.';
+    msg.textContent = 'Erro ao salvar. Tente novamente!';
     console.error(e);
   }finally{
     btn.disabled = false;
