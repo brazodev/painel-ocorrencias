@@ -1,616 +1,631 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Ocorrências</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg: #f5f5f7;
-      --card-bg: #ffffff;
-      --text: #1d1d1f;
-      --muted: #86868b;
-      --border: #e5e5ea;
-      --blue: #3483FA;
-      --red: #FF4545;
-      --navy: #2D3277;
-      --orange: #F58220;
-      --green: #2e7d32;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Ocorrências — Processo Seletivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    /* Paleta Mercado Livre */
+    --ml-yellow: #FFE600;
+    --ml-yellow-deep: #FFD100;
+    --blue: #3483FA;
+    --blue-dark: #2968C8;
+    --navy: #2D3277;
+    --green: #00A650;
+    --amber: #F58220;
+    --red: #FF4545;
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'IBM Plex Mono', monospace;
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    --bg: #EBEBEB;
+    --surface: #FFFFFF;
+    --surface-2: #F6F6F6;
+    --line: #E4E4E4;
+    --text: #2B2B2B;
+    --muted: #666666;
+    --muted-2: #999999;
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border);
-    }
-    h1 { font-size: 1.2rem; font-weight: 700; }
-    #clock { font-size: 0.85rem; color: var(--muted); }
+    --mono: 'IBM Plex Mono', monospace;
+    --disp: 'Poppins', sans-serif;
+    --body: 'Inter', sans-serif;
 
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tab {
-      padding: 8px 16px;
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.85rem;
-    }
-    .tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(43,43,43,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--body);}
+  body{min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px;}
 
-    .view { display: none; }
-    .view.active { display: block; }
+  /* ---------- status strip ---------- */
+  .status-strip{
+    position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(100deg,var(--ml-yellow) 0%,var(--ml-yellow-deep) 100%);
+    border-radius:var(--radius);
+    padding:16px 22px;margin-bottom:20px;
+    flex-wrap:wrap;gap:14px;
+    box-shadow:var(--shadow);
+  }
+  .status-strip::after{
+    content:"";position:absolute;right:-40px;top:-60%;width:220px;height:220%;
+    background:rgba(255,255,255,.16);transform:rotate(18deg);pointer-events:none;
+  }
+  .status-left{display:flex;align-items:center;gap:12px;z-index:1;}
+  .pulse-dot{position:relative;width:10px;height:10px;flex-shrink:0;}
+  .pulse-dot::before,.pulse-dot::after{
+    content:"";position:absolute;inset:0;border-radius:50%;background:var(--navy);
+  }
+  .pulse-dot::after{background:transparent;border:2px solid var(--navy);opacity:.5;
+    animation:pulse 2.2s ease-out infinite;}
+  @keyframes pulse{
+    0%{transform:scale(1);opacity:.55;}
+    100%{transform:scale(2.6);opacity:0;}
+  }
+  .status-title{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:-0.01em;color:var(--navy);}
+  .status-sub{color:rgba(45,50,119,.65);font-size:12px;font-family:var(--mono);margin-top:2px;}
+  .status-right{display:flex;gap:24px;align-items:baseline;z-index:1;}
+  .stat{text-align:right;}
+  .stat-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;color:var(--navy);}
+  .stat-label{font-size:10px;color:rgba(45,50,119,.65);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;font-weight:600;}
 
-    .status-strip {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      background: var(--card-bg);
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .stat-box { flex: 1; text-align: center; }
-    .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--blue); }
-    .stat-label { font-size: 0.75rem; color: var(--muted); }
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  .tab{
+    display:flex;align-items:center;gap:7px;
+    padding:11px 4px;margin-right:26px;background:none;border:none;cursor:pointer;
+    color:var(--muted);font-family:var(--disp);font-weight:600;font-size:14.5px;
+    border-bottom:2px solid transparent;transition:.15s;
+  }
+  .tab svg{width:16px;height:16px;stroke:currentColor;opacity:.8;}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab:hover{color:var(--blue);}
 
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      padding: 15px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .card-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-    .card-icon svg { width: 24px; height: 24px; stroke: currentColor; }
-    .cat-Candidatos { color: var(--red); }
-    .cat-tec { color: var(--blue); }
-    .cat-Comunicação { color: var(--navy); }
-    .cat-Operacionais { color: var(--orange); }
-    .card-num { font-size: 1.2rem; font-weight: 700; }
-    .card-label { font-size: 0.75rem; color: var(--muted); }
+  .view{display:none;}
+  .view.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .chart-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .chart-box h3 { font-size: 0.85rem; margin-bottom: 10px; color: var(--muted); }
+  /* ---------- shared panel ---------- */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+  .panel-heading{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 18px;color:var(--text);}
 
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--muted); }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-family: inherit;
-      font-size: 0.85rem;
-      background: var(--card-bg);
-    }
-    .sev-group { display: flex; gap: 8px; }
-    .sev-btn {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.75rem;
-      text-align: center;
-    }
-    .sev-btn.selected { background: var(--text); color: white; border-color: var(--text); }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
+  label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+  select, input[type=date], input[type=text], textarea{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:10px 12px;font-family:var(--body);font-size:14px;
+    outline:none;transition:.15s;
+  }
+  select:focus, input:focus, textarea:focus{
+    border-color:var(--blue);background:var(--surface);
+    box-shadow:0 0 0 3px rgba(52,131,250,.12);
+  }
+  textarea{resize:vertical;min-height:76px;font-family:var(--body);line-height:1.5;}
 
-    button.btn-primary {
-      width: 100%;
-      padding: 12px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .severity-row{display:flex;gap:8px;}
+  .sev-btn{
+    flex:1;padding:10px 6px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);
+    color:var(--muted);font-family:var(--mono);font-size:12.5px;font-weight:500;cursor:pointer;text-align:center;
+    transition:.15s;
+  }
+  .sev-btn:hover{border-color:var(--muted-2);}
+  .sev-btn.selected[data-sev="Baixo"]{background:rgba(0,166,80,.1);border-color:var(--green);color:var(--green);font-weight:600;}
+  .sev-btn.selected[data-sev="Médio"]{background:rgba(245,130,32,.1);border-color:var(--amber);color:var(--amber);font-weight:600;}
+  .sev-btn.selected[data-sev="Alto"]{background:rgba(255,69,69,.1);border-color:var(--red);color:var(--red);font-weight:600;}
 
-    .log-list { margin-top: 15px; }
-    .log-item {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      display: flex;
-      gap: 12px;
-    }
-    .log-tag svg { width: 20px; height: 20px; }
-    .log-body { flex: 1; }
-    .log-top { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
-    .log-type { font-weight: 600; }
-    .log-meta { font-size: 0.75rem; color: var(--muted); }
-    .log-desc { font-size: 0.8rem; margin-bottom: 6px; }
-    .log-foot { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); }
-    .sev-pill {
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #eee;
-      font-weight: 600;
-    }
+  .submit-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    margin-top:20px;background:var(--blue);color:#fff;border:none;border-radius:9px;
+    padding:12px 24px;font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer;
+    transition:.15s;box-shadow:0 2px 8px rgba(52,131,250,.28);
+  }
+  .submit-btn:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(52,131,250,.32);}
+  .submit-btn:active{transform:translateY(0);}
+  .submit-btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;}
+  .form-msg{margin-top:12px;font-size:13px;font-family:var(--mono);color:var(--green);min-height:16px;transition:.15s;}
 
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: var(--muted);
-      font-size: 0.85rem;
-    }
-    .empty-state svg { width: 36px; height: 36px; margin-bottom: 8px; stroke: var(--muted); }
-  </style>
+  /* ---------- dashboard cards ---------- */
+  .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .card{
+    display:flex;align-items:center;gap:14px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+    box-shadow:var(--shadow);transition:.15s;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(43,43,43,.08);}
+  .card-icon{
+    width:38px;height:38px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card-icon svg{width:19px;height:19px;stroke-width:2;}
+  .card.cat-Candidatos .card-icon{background:rgba(255,69,69,.1);color:var(--red);}
+  .card.cat-tec .card-icon{background:rgba(52,131,250,.1);color:var(--blue);}
+  .card.cat-Comunicação .card-icon{background:rgba(45,50,119,.1);color:var(--navy);}
+  .card.cat-Operacionais .card-icon{background:rgba(245,130,32,.1);color:var(--amber);}
+  .card-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;}
+  .card-label{color:var(--muted);font-size:11.5px;margin-top:5px;font-weight:500;}
+
+  .charts-row{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:18px;}
+  .chart-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+  .chart-panel h3{margin:0 0 16px;font-family:var(--disp);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+  .chart-box{position:relative;height:230px;}
+
+  .log-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:0;overflow:hidden;box-shadow:var(--shadow);}
+  .log-header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:10px;}
+  .log-header h3{margin:0;font-family:var(--disp);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+  .filter-select{background:var(--surface-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 12px;font-size:12.5px;font-family:var(--mono);cursor:pointer;}
+  .filter-select:focus{border-color:var(--blue);background:var(--surface);}
+  .log-list{max-height:440px;overflow-y:auto;}
+  .log-item{
+    display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);
+    font-size:13px;align-items:flex-start;transition:.12s;
+  }
+  .log-item:hover{background:var(--surface-2);}
+  .log-item:last-child{border-bottom:none;}
+  .log-tag{
+    width:30px;height:30px;border-radius:9px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .log-tag svg{width:15px;height:15px;stroke-width:2;}
+  .tag-Candidatos{background:rgba(255,69,69,.1);color:var(--red);}
+  .tag-tec{background:rgba(52,131,250,.1);color:var(--blue);}
+  .tag-Comunicação{background:rgba(45,50,119,.1);color:var(--navy);}
+  .tag-Operacionais{background:rgba(245,130,32,.1);color:var(--amber);}
+  .log-body{flex:1;min-width:0;}
+  .log-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:3px;flex-wrap:wrap;}
+  .log-type{font-weight:600;font-size:13.5px;font-family:var(--disp);}
+  .log-meta{font-family:var(--mono);color:var(--muted-2);font-size:11.5px;white-space:nowrap;}
+  .log-desc{color:var(--muted);font-size:12.5px;line-height:1.5;}
+  .log-foot{margin-top:6px;display:flex;gap:8px;align-items:center;font-size:11px;font-family:var(--mono);color:var(--muted-2);}
+  .sev-pill{padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
+  .sev-pill.Baixo{background:rgba(0,166,80,.1);color:var(--green);}
+  .sev-pill.Médio{background:rgba(245,130,32,.1);color:var(--amber);}
+  .sev-pill.Alto{background:rgba(255,69,69,.1);color:var(--red);}
+  .empty-state{padding:48px 20px;text-align:center;color:var(--muted-2);}
+  .empty-state svg{width:34px;height:34px;stroke-width:1.5;margin-bottom:10px;opacity:.5;}
+  .empty-state div{font-family:var(--mono);font-size:13px;}
+
+  @media(max-width:820px){
+    .form-grid{grid-template-columns:1fr;}
+    .cards-row{grid-template-columns:1fr 1fr;}
+    .charts-row{grid-template-columns:1fr;}
+    .status-right{gap:16px;}
+    .status-strip{padding:16px;}
+  }
+  @media(max-width:480px){
+    .cards-row{grid-template-columns:1fr;}
+    .status-strip{flex-direction:column;align-items:flex-start;}
+    .status-right{width:100%;justify-content:space-between;}
+  }
+</style>
 </head>
 <body>
+<div class="wrap">
 
-  <header>
-    <h1>Registro de Ocorrências</h1>
-    <div id="clock">--/--/---- --:--</div>
-  </header>
-
-  <div class="tabs">
-    <div class="tab active" data-tab="registrar">Registrar</div>
-    <div class="tab" data-tab="painel">Painel de Impactos</div>
+  <div class="status-strip">
+    <div class="status-left">
+      <div class="pulse-dot"></div>
+      <div>
+        <div class="status-title">Painel de Ocorrências — Processo Seletivo</div>
+        <div class="status-sub" id="clock">carregando…</div>
+      </div>
+    </div>
+    <div class="status-right">
+      <div class="stat"><div class="stat-num" id="statHoje">–</div><div class="stat-label">Hoje</div></div>
+      <div class="stat"><div class="stat-num" id="statSemana">–</div><div class="stat-label">7 dias</div></div>
+      <div class="stat"><div class="stat-num" id="statTotal">–</div><div class="stat-label">Total</div></div>
+    </div>
   </div>
 
-  <!-- VIEW REGISTRAR -->
-  <div id="view-registrar" class="view active">
-    <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); max-width: 600px; margin: 0 auto;">
-      <div class="form-group">
-        <label>Categoria</label>
-        <select id="fCategoria">
+  <div class="tabs">
+    <button class="tab active" data-tab="registrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Registrar ocorrência
+    </button>
+    <button class="tab" data-tab="painel">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+      Painel de impactos
+    </button>
+  </div>
+
+  <!-- REGISTRAR -->
+  <div class="view active" id="view-registrar">
+    <div class="panel">
+      <h2 class="panel-heading">Nova ocorrência</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Categoria</label>
+          <select id="fCategoria">
+            <option value="Candidatos">Candidatos</option>
+            <option value="Problemas técnicos">Problemas técnicos</option>
+            <option value="Comunicação">Comunicação</option>
+            <option value="Operacionais">Operacionais</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tipo de ocorrência</label>
+          <select id="fTipo"></select>
+        </div>
+        <div class="field" id="fTipoOutroWrap" style="display:none;">
+          <label>Especifique o tipo</label>
+          <input type="text" id="fTipoOutro" placeholder="Descreva o tipo de ocorrência">
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="fData">
+        </div>
+        <div class="field">
+          <label>Responsável pelo registro</label>
+          <input type="text" id="fResponsavel" placeholder="Nome de quem está registrando">
+        </div>
+        <div class="field">
+          <label>Vaga / Unidade (opcional)</label>
+          <input type="text" id="fVaga" placeholder="Ex: Analista de RH — Unidade Centro">
+        </div>
+        <div class="field">
+          <label>Impacto</label>
+          <div class="severity-row" id="fSeveridade">
+            <div class="sev-btn" data-sev="Baixo">Baixo</div>
+            <div class="sev-btn selected" data-sev="Médio">Médio</div>
+            <div class="sev-btn" data-sev="Alto">Alto</div>
+          </div>
+        </div>
+        <div class="field full">
+          <label>Descrição do ocorrido</label>
+          <textarea id="fDescricao" placeholder="Detalhe o que aconteceu e o impacto gerado no processo seletivo"></textarea>
+        </div>
+      </div>
+      <button class="submit-btn" id="btnSalvar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Registrar ocorrência
+      </button>
+      <div class="form-msg" id="formMsg"></div>
+    </div>
+  </div>
+
+  <!-- PAINEL -->
+  <div class="view" id="view-painel">
+    <div class="cards-row" id="cardsRow"></div>
+
+    <div class="charts-row">
+      <div class="chart-panel">
+        <h3>Ocorrências por tipo</h3>
+        <div class="chart-box"><canvas id="chartTipo"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <h3>Por categoria</h3>
+        <div class="chart-box"><canvas id="chartCategoria"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row" style="grid-template-columns:1fr;">
+      <div class="chart-panel">
+        <h3>Volume por dia (últimos 14 dias)</h3>
+        <div class="chart-box"><canvas id="chartDia"></canvas></div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <div class="log-header">
+        <h3>Registro de ocorrências</h3>
+        <select class="filter-select" id="filterCategoria">
+          <option value="">Todas as categorias</option>
           <option value="Candidatos">Candidatos</option>
           <option value="Problemas técnicos">Problemas técnicos</option>
           <option value="Comunicação">Comunicação</option>
           <option value="Operacionais">Operacionais</option>
         </select>
       </div>
-
-      <div class="form-group">
-        <label>Tipo de Ocorrência</label>
-        <select id="fTipo"></select>
-      </div>
-
-      <div class="form-group" id="fTipoOutroWrap" style="display: none;">
-        <label>Especifique o Tipo</label>
-        <input type="text" id="fTipoOutro" placeholder="Descreva o tipo de ocorrência">
-      </div>
-
-      <div class="form-group">
-        <label>Data</label>
-        <input type="date" id="fData">
-      </div>
-
-      <div class="form-group">
-        <label>Responsável</label>
-        <input type="text" id="fResponsavel" placeholder="Seu nome">
-      </div>
-
-      <div class="form-group">
-        <label>Vaga / ID (Opcional)</label>
-        <input type="text" id="fVaga" placeholder="Ex: Auxiliar de Logística">
-      </div>
-
-      <div class="form-group">
-        <label>Descrição</label>
-        <textarea id="fDescricao" rows="3" placeholder="Detalhes do ocorrido..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Severidade</label>
-        <div class="sev-group">
-          <div class="sev-btn" data-sev="Baixo">Baixo</div>
-          <div class="sev-btn selected" data-sev="Médio">Médio</div>
-          <div class="sev-btn" data-sev="Alto">Alto</div>
-          <div class="sev-btn" data-sev="Crítico">Crítico</div>
-        </div>
-      </div>
-
-      <button id="btnSalvar" class="btn-primary">Registrar Ocorrência</button>
-      <div id="formMsg" style="margin-top: 10px; font-size: 0.8rem; text-align: center;"></div>
+      <div class="log-list" id="logList"></div>
     </div>
   </div>
 
-  <!-- VIEW PAINEL -->
-  <div id="view-painel" class="view">
-    <div class="status-strip">
-      <div class="stat-box">
-        <div class="stat-num" id="statHoje">0</div>
-        <div class="stat-label">Hoje</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" id="statSemana">0</div>
-        <div class="stat-label">Últimos 7 dias</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" id="statTotal">0</div>
-        <div class="stat-label">Total</div>
-      </div>
-    </div>
+</div>
 
-    <div class="cards-grid" id="cardsRow"></div>
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzhXlRwCbWfd86e-VeVPoGTzH4zKSzAsu6fk-5B_mIPCn84h2aP7dUl_8_5RTKJRqci/exec";
 
-    <div class="charts-grid">
-      <div class="chart-box">
-        <h3>Tipos mais Frequentes</h3>
-        <canvas id="chartTipo"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>Distribuição por Categoria</h3>
-        <canvas id="chartCategoria"></canvas>
-      </div>
-      <div class="chart-box" style="grid-column: 1 / -1;">
-        <h3>Ocorrências nos Últimos 14 Dias</h3>
-        <canvas id="chartDia"></canvas>
-      </div>
-    </div>
+const TIPOS = {
+  "Candidatos": [
+    "Candidato convocado sem necessidade",
+    "Candidato foi ao pátio tirar dúvida",
+    "Desistência",
+    "No-show",
+    "Reclamação de candidato",
+    "Outro"
+  ],
+  "Problemas técnicos": [
+    "Queda de sistema",
+    "Erro de validação de documentos",
+    "Instabilidade de plataforma",
+    "Outro"
+  ],
+  "Comunicação": [
+    "Falha no envio de e-mail",
+    "Mensagem não entregue",
+    "Erro de contato com candidato",
+    "Outro"
+  ],
+  "Operacionais": [
+    "Exame realizado há menos de 30 dias reagendado indevidamente",
+    "Atraso em etapa do processo",
+    "Documentação pendente",
+    "Erro de agendamento de entrevista",
+    "Outro"
+  ]
+};
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 10px;">
-      <h3 style="font-size: 0.9rem;">Histórico de Ocorrências</h3>
-      <select id="filterCategoria" style="width: auto; padding: 5px 10px;">
-        <option value="">Todas as Categorias</option>
-        <option value="Candidatos">Candidatos</option>
-        <option value="Problemas técnicos">Problemas técnicos</option>
-        <option value="Comunicação">Comunicação</option>
-        <option value="Operacionais">Operacionais</option>
-      </select>
-    </div>
+const ICONS = {
+  "Candidatos": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  "Problemas técnicos": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  "Comunicação": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  "Operacionais": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12h6M9 16h6"/></svg>',
+};
+const EMPTY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
 
-    <div class="log-list" id="logList"></div>
-  </div>
+const catKey = c => c === "Problemas técnicos" ? "tec" : c;
 
-  <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbzhXlRwCbWfd86e-VeVPoGTzH4zKSzAsu6fk-5B_mIPCn84h2aP7dUl_8_5RTKJRqci/exec";
+let occurrences = [];
+let charts = {};
 
-  const TIPOS = {
-    "Candidatos": [
-      "Candidato convocado sem necessidade",
-      "Candidato foi ao pátio tirar dúvida",
-      "Desistência",
-      "No-show",
-      "Reclamação de candidato",
-      "Outro"
-    ],
-    "Problemas técnicos": [
-      "Queda de sistema",
-      "Erro de validação de documentos",
-      "Instabilidade de plataforma",
-      "Outro"
-    ],
-    "Comunicação": [
-      "Falha no envio de e-mail",
-      "Mensagem não entregue",
-      "Erro de contato com candidato",
-      "Outro"
-    ],
-    "Operacionais": [
-      "Exame realizado há menos de 30 dias reagendado indevidamente",
-      "Atraso em etapa do processo",
-      "Documentação pendente",
-      "Erro de agendamento de entrevista",
-      "Outro"
-    ]
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function populateTipos(){
+  const cat = document.getElementById('fCategoria').value;
+  const sel = document.getElementById('fTipo');
+  sel.innerHTML = TIPOS[cat].map(t => `<option value="${t}">${t}</option>`).join('');
+  toggleOutro();
+}
+function toggleOutro(){
+  const wrap = document.getElementById('fTipoOutroWrap');
+  wrap.style.display = document.getElementById('fTipo').value === 'Outro' ? 'flex' : 'none';
+}
+
+document.getElementById('fCategoria').addEventListener('change', populateTipos);
+document.getElementById('fTipo').addEventListener('change', toggleOutro);
+document.querySelectorAll('.sev-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', async ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab === 'painel') await renderDashboard();
+  });
+});
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('pt-BR', {
+    weekday:'short', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+}
+updateClock();
+setInterval(updateClock, 1000*30);
+
+async function loadOccurrences(){
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    occurrences = Array.isArray(data) ? data : [];
+    occurrences.sort((a,b)=> (b.data + (b.criadoEm || '')).localeCompare(a.data + (a.criadoEm || '')));
+  } catch(e) {
+    console.error('Erro ao carregar ocorrências:', e);
+    occurrences = [];
+  }
+}
+
+async function saveOccurrence(occ){
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(occ)
+    });
+  } catch(e) {
+    console.error('Erro ao salvar no Google Sheets:', e);
+    throw e;
+  }
+}
+
+document.getElementById('btnSalvar').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnSalvar');
+  const msg = document.getElementById('formMsg');
+  const categoria = document.getElementById('fCategoria').value;
+  let tipo = document.getElementById('fTipo').value;
+  const tipoOutro = document.getElementById('fTipoOutro').value.trim();
+  const data = document.getElementById('fData').value || todayISO();
+  const responsavel = document.getElementById('fResponsavel').value.trim();
+  const vaga = document.getElementById('fVaga').value.trim();
+  const descricao = document.getElementById('fDescricao').value.trim();
+  const sevBtn = document.querySelector('.sev-btn.selected');
+  const severidade = sevBtn ? sevBtn.dataset.sev : 'Médio';
+
+  if(tipo === 'Outro'){
+    if(!tipoOutro){ msg.style.color='var(--red)'; msg.textContent='Especifique o tipo de ocorrência.'; return; }
+    tipo = tipoOutro;
+  }
+  if(!responsavel){ msg.style.color='var(--red)'; msg.textContent='Informe o responsável pelo registro.'; return; }
+
+  btn.disabled = true;
+  msg.style.color='var(--muted)';
+  msg.textContent = 'Salvando na nuvem…';
+
+  const occ = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
+    categoria, tipo, data, responsavel, vaga, descricao, severidade,
+    criadoEm: new Date().toISOString()
   };
 
-  const ICONS = {
-    "Candidatos": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    "Problemas técnicos": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
-    "Comunicação": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-    "Operacionais": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12h6M9 16h6"/></svg>',
-  };
-  const EMPTY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-
-  const catKey = c => c === "Problemas técnicos" ? "tec" : c;
-
-  let occurrences = [];
-  let charts = {};
-
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
-
-  function populateTipos(){
-    const cat = document.getElementById('fCategoria').value;
-    const sel = document.getElementById('fTipo');
-    sel.innerHTML = TIPOS[cat].map(t => `<option value="${t}">${t}</option>`).join('');
-    toggleOutro();
+  try{
+    await saveOccurrence(occ);
+    await loadOccurrences();
+    msg.style.color='var(--green)';
+    msg.textContent = 'Ocorrência registrada com sucesso!';
+    document.getElementById('fDescricao').value = '';
+    document.getElementById('fVaga').value = '';
+    document.getElementById('fResponsavel').value = '';
+    document.getElementById('fData').value = todayISO();
+    updateStatusStrip();
+  }catch(e){
+    msg.style.color='var(--red)';
+    msg.textContent = 'Erro ao salvar. Tente novamente.';
+    console.error(e);
+  }finally{
+    btn.disabled = false;
   }
-  function toggleOutro(){
-    const wrap = document.getElementById('fTipoOutroWrap');
-    wrap.style.display = document.getElementById('fTipo').value === 'Outro' ? 'block' : 'none';
-  }
+});
 
-  document.getElementById('fCategoria').addEventListener('change', populateTipos);
-  document.getElementById('fTipo').addEventListener('change', toggleOutro);
-  document.querySelectorAll('.sev-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-    });
-  });
-  document.querySelectorAll('.tab').forEach(tab=>{
-    tab.addEventListener('click', async ()=>{
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('view-'+tab.dataset.tab).classList.add('active');
-      if(tab.dataset.tab === 'painel') await renderDashboard();
-    });
-  });
+function updateStatusStrip(){
+  const today = todayISO();
+  const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+  document.getElementById('statHoje').textContent = occurrences.filter(o=>o.data===today).length;
+  document.getElementById('statSemana').textContent = occurrences.filter(o=>o.data>=weekAgo).length;
+  document.getElementById('statTotal').textContent = occurrences.length;
+}
 
-  function updateClock(){
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleString('pt-BR', {
-      weekday:'short', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
-    });
-  }
-  updateClock();
-  setInterval(updateClock, 1000*30);
-
-  // Força quebra de cache com parâmetro ?t=
-  async function loadOccurrences(){
-    try {
-      const res = await fetch(API_URL + '?t=' + Date.now());
-      const data = await res.json();
-      occurrences = Array.isArray(data) ? data : [];
-      occurrences.sort((a,b)=> (b.data + (b.criadoEm || '')).localeCompare(a.data + (a.criadoEm || '')));
-    } catch(e) {
-      console.error('Erro ao carregar ocorrências:', e);
-      occurrences = [];
-    }
-  }
-
-  async function saveOccurrence(occ){
-    try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(occ)
-      });
-    } catch(e) {
-      console.error('Erro ao salvar no Google Sheets:', e);
-      throw e;
-    }
-  }
-
-  document.getElementById('btnSalvar').addEventListener('click', async ()=>{
-    const btn = document.getElementById('btnSalvar');
-    const msg = document.getElementById('formMsg');
-    const categoria = document.getElementById('fCategoria').value;
-    let tipo = document.getElementById('fTipo').value;
-    const tipoOutro = document.getElementById('fTipoOutro').value.trim();
-    const data = document.getElementById('fData').value || todayISO();
-    const responsavel = document.getElementById('fResponsavel').value.trim();
-    const vaga = document.getElementById('fVaga').value.trim();
-    const descricao = document.getElementById('fDescricao').value.trim();
-    const sevBtn = document.querySelector('.sev-btn.selected');
-    const severidade = sevBtn ? sevBtn.dataset.sev : 'Médio';
-
-    if(tipo === 'Outro'){
-      if(!tipoOutro){ msg.style.color='var(--red)'; msg.textContent='Especifique o tipo de ocorrência.'; return; }
-      tipo = tipoOutro;
-    }
-    if(!responsavel){ msg.style.color='var(--red)'; msg.textContent='Informe o responsável pelo registro.'; return; }
-
-    btn.disabled = true;
-    msg.style.color='var(--muted)';
-    msg.textContent = 'Salvando na nuvem…';
-
-    const occ = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
-      categoria, tipo, data, responsavel, vaga, descricao, severidade,
-      criadoEm: new Date().toISOString()
-    };
-
-    try{
-      await saveOccurrence(occ);
-      await loadOccurrences();
-      msg.style.color='var(--green)';
-      msg.textContent = 'Ocorrência registrada com sucesso!';
-      document.getElementById('fDescricao').value = '';
-      document.getElementById('fVaga').value = '';
-      document.getElementById('fResponsavel').value = '';
-      document.getElementById('fData').value = todayISO();
-      
-      // Atualiza os componentes do painel após salvar
-      updateStatusStrip();
-      renderCards();
-      renderCharts();
-      renderLog();
-    }catch(e){
-      msg.style.color='var(--red)';
-      msg.textContent = 'Erro ao salvar. Tente novamente.';
-      console.error(e);
-    }finally{
-      btn.disabled = false;
-    }
-  });
-
-  function updateStatusStrip(){
-    const today = todayISO();
-    const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
-    document.getElementById('statHoje').textContent = occurrences.filter(o=>o.data===today).length;
-    document.getElementById('statSemana').textContent = occurrences.filter(o=>o.data>=weekAgo).length;
-    document.getElementById('statTotal').textContent = occurrences.length;
-  }
-
-  function renderCards(){
-    const cats = ["Candidatos","Problemas técnicos","Comunicação","Operacionais"];
-    const row = document.getElementById('cardsRow');
-    row.innerHTML = cats.map(c=>{
-      const count = occurrences.filter(o=>o.categoria===c).length;
-      return `<div class="card cat-${catKey(c)}">
-        <div class="card-icon">${ICONS[c]}</div>
-        <div>
-          <div class="card-num">${count}</div>
-          <div class="card-label">${c}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  function renderCharts(){
-    if (typeof Chart === 'undefined') {
-      console.warn('Chart.js ainda não foi carregado.');
-      return;
-    }
-
-    const tipoCounts = {};
-    occurrences.forEach(o=>{ tipoCounts[o.tipo] = (tipoCounts[o.tipo]||0)+1; });
-    const tipoEntries = Object.entries(tipoCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
-
-    const catCounts = {"Candidatos":0,"Problemas técnicos":0,"Comunicação":0,"Operacionais":0};
-    occurrences.forEach(o=>{ if(catCounts[o.categoria]!==undefined) catCounts[o.categoria]++; });
-
-    const days = [];
-    for(let i=13;i>=0;i--){
-      const d = new Date(Date.now()-i*86400000);
-      days.push(d.toISOString().slice(0,10));
-    }
-    const dayCounts = days.map(d=> occurrences.filter(o=>o.data===d).length);
-
-    const fontColor = '#666666';
-    const gridColor = 'rgba(0,0,0,0.06)';
-    Chart.defaults.font.family = "'IBM Plex Mono', monospace";
-    Chart.defaults.font.size = 11;
-
-    if(charts.tipo) charts.tipo.destroy();
-    charts.tipo = new Chart(document.getElementById('chartTipo'), {
-      type:'bar',
-      data:{ labels: tipoEntries.map(e=>e[0]), datasets:[{
-        data: tipoEntries.map(e=>e[1]),
-        backgroundColor:'#3483FA', borderRadius:5, maxBarThickness:26
-      }]},
-      options:{
-        indexAxis:'y', plugins:{legend:{display:false}},
-        scales:{
-          x:{ticks:{color:fontColor,precision:0},grid:{color:gridColor}},
-          y:{ticks:{color:fontColor,font:{size:10.5}},grid:{display:false}}
-        }
-      }
-    });
-
-    if(charts.categoria) charts.categoria.destroy();
-    charts.categoria = new Chart(document.getElementById('chartCategoria'), {
-      type:'doughnut',
-      data:{ labels:Object.keys(catCounts), datasets:[{
-        data:Object.values(catCounts),
-        backgroundColor:['#FF4545','#3483FA','#2D3277','#F58220'],
-        borderColor:'#ffffff', borderWidth:2
-      }]},
-      options:{
-        cutout:'62%',
-        plugins:{legend:{position:'bottom',labels:{color:fontColor,boxWidth:10,padding:12,font:{size:10.5}}}}
-      }
-    });
-
-    if(charts.dia) charts.dia.destroy();
-    charts.dia = new Chart(document.getElementById('chartDia'), {
-      type:'line',
-      data:{ labels: days.map(d=>d.slice(5).split('-').reverse().join('/')), datasets:[{
-        data: dayCounts, borderColor:'#3483FA', backgroundColor:'rgba(52,131,250,0.12)',
-        fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#3483FA'
-      }]},
-      options:{
-        plugins:{legend:{display:false}},
-        scales:{
-          x:{ticks:{color:fontColor},grid:{display:false}},
-          y:{ticks:{color:fontColor,precision:0},grid:{color:gridColor},beginAtZero:true}
-        }
-      }
-    });
-  }
-
-  function renderLog(){
-    const filter = document.getElementById('filterCategoria').value;
-    const list = document.getElementById('logList');
-    const items = filter ? occurrences.filter(o=>o.categoria===filter) : occurrences;
-    if(items.length === 0){
-      list.innerHTML = `<div class="empty-state">${EMPTY_ICON}<div>Nenhuma ocorrência registrada ainda.</div></div>`;
-      return;
-    }
-    list.innerHTML = items.map(o=>{
-      const dataFmt = o.data ? o.data.split('-').reverse().join('/') : '—';
-      return `<div class="log-item">
-        <div class="log-tag cat-${catKey(o.categoria)}">${ICONS[o.categoria] || ''}</div>
-        <div class="log-body">
-          <div class="log-top">
-            <span class="log-type">${escapeHtml(o.tipo || '')}</span>
-            <span class="log-meta">${dataFmt} · ${escapeHtml(o.responsavel||'—')}</span>
-          </div>
-          ${o.vaga ? `<div class="log-meta" style="margin-bottom:3px;">${escapeHtml(o.vaga)}</div>` : ''}
-          ${o.descricao ? `<div class="log-desc">${escapeHtml(o.descricao)}</div>` : ''}
-          <div class="log-foot">
-            <span class="sev-pill">${o.severidade}</span>
-            <span>${o.categoria}</span>
-          </div>
-        </div>
-      </div>`;
+function renderCards(){
+  const cats = ["Candidatos","Problemas técnicos","Comunicação","Operacionais"];
+  const row = document.getElementById('cardsRow');
+  row.innerHTML = cats.map(c=>{
+    const count = occurrences.filter(o=>o.categoria===c).length;
+    return `<div class="card cat-${catKey(c)}">
+      <div class="card-icon">${ICONS[c]}</div>
+      <div>
+        <div class="card-num">${count}</div>
+        <div class="card-label">${c}</div>
+      </div>
+    </div>`;
   }).join('');
+}
+
+function renderCharts(){
+  const tipoCounts = {};
+  occurrences.forEach(o=>{ tipoCounts[o.tipo] = (tipoCounts[o.tipo]||0)+1; });
+  const tipoEntries = Object.entries(tipoCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const catCounts = {"Candidatos":0,"Problemas técnicos":0,"Comunicação":0,"Operacionais":0};
+  occurrences.forEach(o=>{ if(catCounts[o.categoria]!==undefined) catCounts[o.categoria]++; });
+
+  const days = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date(Date.now()-i*86400000);
+    days.push(d.toISOString().slice(0,10));
   }
+  const dayCounts = days.map(d=> occurrences.filter(o=>o.data===d).length);
 
-  function escapeHtml(str){
-    if(!str) return '';
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+  const fontColor = '#666666';
+  const gridColor = 'rgba(0,0,0,0.06)';
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.size = 11;
+
+  if(charts.tipo) charts.tipo.destroy();
+  charts.tipo = new Chart(document.getElementById('chartTipo'), {
+    type:'bar',
+    data:{ labels: tipoEntries.map(e=>e[0]), datasets:[{
+      data: tipoEntries.map(e=>e[1]),
+      backgroundColor:'#3483FA', borderRadius:5, maxBarThickness:26
+    }]},
+    options:{
+      indexAxis:'y', plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:fontColor,precision:0},grid:{color:gridColor}},
+        y:{ticks:{color:fontColor,font:{size:10.5}},grid:{display:false}}
+      }
+    }
+  });
+
+  if(charts.categoria) charts.categoria.destroy();
+  charts.categoria = new Chart(document.getElementById('chartCategoria'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(catCounts), datasets:[{
+      data:Object.values(catCounts),
+      backgroundColor:['#FF4545','#3483FA','#2D3277','#F58220'],
+      borderColor:'#ffffff', borderWidth:2
+    }]},
+    options:{
+      cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:fontColor,boxWidth:10,padding:12,font:{size:10.5}}}}
+    }
+  });
+
+  if(charts.dia) charts.dia.destroy();
+  charts.dia = new Chart(document.getElementById('chartDia'), {
+    type:'line',
+    data:{ labels: days.map(d=>d.slice(5).split('-').reverse().join('/')), datasets:[{
+      data: dayCounts, borderColor:'#3483FA', backgroundColor:'rgba(52,131,250,0.12)',
+      fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#3483FA'
+    }]},
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:fontColor},grid:{display:false}},
+        y:{ticks:{color:fontColor,precision:0},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderLog(){
+  const filter = document.getElementById('filterCategoria').value;
+  const list = document.getElementById('logList');
+  const items = filter ? occurrences.filter(o=>o.categoria===filter) : occurrences;
+  if(items.length === 0){
+    list.innerHTML = `<div class="empty-state">${EMPTY_ICON}<div>Nenhuma ocorrência registrada ainda.</div></div>`;
+    return;
   }
+  list.innerHTML = items.map(o=>{
+    const dataFmt = o.data ? o.data.split('-').reverse().join('/') : '—';
+    return `<div class="log-item">
+      <div class="log-tag tag-${catKey(o.categoria)}">${ICONS[o.categoria] || ''}</div>
+      <div class="log-body">
+        <div class="log-top">
+          <span class="log-type">${escapeHtml(o.tipo || '')}</span>
+          <span class="log-meta">${dataFmt} · ${escapeHtml(o.responsavel||'—')}</span>
+        </div>
+        ${o.vaga ? `<div class="log-meta" style="margin-bottom:3px;">${escapeHtml(o.vaga)}</div>` : ''}
+        ${o.descricao ? `<div class="log-desc">${escapeHtml(o.descricao)}</div>` : ''}
+        <div class="log-foot">
+          <span class="sev-pill ${o.severidade}">${o.severidade}</span>
+          <span>${o.categoria}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  document.getElementById('filterCategoria').addEventListener('change', renderLog);
+function escapeHtml(str){
+  if(!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
 
-  async function renderDashboard(){
-    await loadOccurrences();
-    updateStatusStrip();
-    renderCards();
-    renderCharts();
-    renderLog();
-  }
+document.getElementById('filterCategoria').addEventListener('change', renderLog);
 
-  // Inicialização
-  document.getElementById('fData').value = todayISO();
-  populateTipos();
-  (async () => {
-    await loadOccurrences();
-    updateStatusStrip();
-    renderCards();
-    renderCharts();
-    renderLog();
-  })();
-  </script>
+async function renderDashboard(){
+  await loadOccurrences();
+  updateStatusStrip();
+  renderCards();
+  renderCharts();
+  renderLog();
+}
+
+// init
+document.getElementById('fData').value = todayISO();
+populateTipos();
+(async () => {
+  await loadOccurrences();
+  updateStatusStrip();
+})();
+</script>
 </body>
 </html>
