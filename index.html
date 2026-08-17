@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro de Ocorrências</title>
+  <title>Painel de Ocorrências</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg: #f5f5f7;
@@ -39,27 +40,40 @@
       padding-bottom: 15px;
       border-bottom: 1px solid var(--border);
     }
-    h1 { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+    h1 { font-size: 1.2rem; font-weight: 700; }
     #clock { font-size: 0.85rem; color: var(--muted); }
 
-    /* FAIXA ESTILO BANNER COM OS CONTADORES */
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    .tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
     .status-strip {
       display: flex;
       gap: 15px;
       margin-bottom: 20px;
-      background: #FFE600;
-      color: var(--navy);
-      padding: 16px 20px;
+      background: var(--card-bg);
+      padding: 15px;
       border-radius: 8px;
-      border: 1px solid rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
     }
     .stat-box { flex: 1; text-align: center; }
-    .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--navy); }
-    .stat-label { font-size: 0.75rem; font-weight: 700; color: var(--navy); opacity: 0.85; text-transform: uppercase; }
+    .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: 0.75rem; color: var(--muted); }
 
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 15px;
       margin-bottom: 20px;
     }
@@ -81,22 +95,19 @@
     .card-num { font-size: 1.2rem; font-weight: 700; }
     .card-label { font-size: 0.75rem; color: var(--muted); }
 
-    .main-grid {
+    .charts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
     }
-
-    @media (max-width: 850px) {
-      .main-grid { grid-template-columns: 1fr; }
-    }
-
-    .form-container {
+    .chart-box {
       background: var(--card-bg);
-      padding: 20px;
-      border-radius: 8px;
       border: 1px solid var(--border);
+      padding: 15px;
+      border-radius: 8px;
     }
+    .chart-box h3 { font-size: 0.85rem; margin-bottom: 10px; color: var(--muted); }
 
     .form-group { margin-bottom: 15px; }
     label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--muted); }
@@ -170,33 +181,18 @@
 <body>
 
   <header>
-    <h1>Painel de Ocorrências — Processo Seletivo</h1>
+    <h1>Registro de Ocorrências</h1>
     <div id="clock">--/--/---- --:--</div>
   </header>
 
-  <!-- FAIXA DE STATUS COM AS TRES REGRAS DE CONTAGEM -->
-  <div class="status-strip">
-    <div class="stat-box">
-      <div class="stat-num" id="statHoje">0</div>
-      <div class="stat-label">Hoje</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-num" id="statSemana">0</div>
-      <div class="stat-label">Segunda a Domingo</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-num" id="stat30Dias">0</div>
-      <div class="stat-label">Últimos 30 Dias</div>
-    </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="registrar">Registrar</div>
+    <div class="tab" data-tab="painel">Painel de Impactos</div>
   </div>
 
-  <div class="cards-grid" id="cardsRow"></div>
-
-  <div class="main-grid">
-    <!-- FORMULÁRIO -->
-    <div class="form-container">
-      <h3 style="font-size: 0.9rem; margin-bottom: 15px;">Registrar Ocorrência</h3>
-      
+  <!-- VIEW REGISTRAR -->
+  <div id="view-registrar" class="view active">
+    <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); max-width: 600px; margin: 0 auto;">
       <div class="form-group">
         <label>Categoria</label>
         <select id="fCategoria">
@@ -250,21 +246,54 @@
       <button id="btnSalvar" class="btn-primary">Registrar Ocorrência</button>
       <div id="formMsg" style="margin-top: 10px; font-size: 0.8rem; text-align: center;"></div>
     </div>
+  </div>
 
-    <!-- HISTÓRICO -->
-    <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="font-size: 0.9rem;">Histórico de Ocorrências</h3>
-        <select id="filterCategoria" style="width: auto; padding: 5px 10px;">
-          <option value="">Todas as Categorias</option>
-          <option value="Candidatos">Candidatos</option>
-          <option value="Problemas técnicos">Problemas técnicos</option>
-          <option value="Comunicação">Comunicação</option>
-          <option value="Operacionais">Operacionais</option>
-        </select>
+  <!-- VIEW PAINEL -->
+  <div id="view-painel" class="view">
+    <div class="status-strip">
+      <div class="stat-box">
+        <div class="stat-num" id="statHoje">0</div>
+        <div class="stat-label">Hoje</div>
       </div>
-      <div class="log-list" id="logList"></div>
+      <div class="stat-box">
+        <div class="stat-num" id="statSemana">0</div>
+        <div class="stat-label">Últimos 7 dias</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">Total</div>
+      </div>
     </div>
+
+    <div class="cards-grid" id="cardsRow"></div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Tipos mais Frequentes</h3>
+        <canvas id="chartTipo"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Distribuição por Categoria</h3>
+        <canvas id="chartCategoria"></canvas>
+      </div>
+      <div class="chart-box" style="grid-column: 1 / -1;">
+        <h3>Ocorrências nos Últimos 14 Dias</h3>
+        <canvas id="chartDia"></canvas>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 10px;">
+      <h3 style="font-size: 0.9rem;">Histórico de Ocorrências</h3>
+      <select id="filterCategoria" style="width: auto; padding: 5px 10px;">
+        <option value="">Todas as Categorias</option>
+        <option value="Candidatos">Candidatos</option>
+        <option value="Problemas técnicos">Problemas técnicos</option>
+        <option value="Comunicação">Comunicação</option>
+        <option value="Operacionais">Operacionais</option>
+      </select>
+    </div>
+
+    <div class="log-list" id="logList"></div>
   </div>
 
   <script>
@@ -311,32 +340,9 @@
   const catKey = c => c === "Problemas técnicos" ? "tec" : c;
 
   let occurrences = [];
+  let charts = {};
 
-  // Data Local no formato YYYY-MM-DD
-  function getLocalDateISO(d = new Date()) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  // Normaliza qualquer string de data (DD/MM/YYYY ou ISO) para YYYY-MM-DD
-  function normalizeDateStr(dStr) {
-    if (!dStr) return '';
-    dStr = String(dStr).trim();
-    if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(dStr)) {
-      const parts = dStr.split('/');
-      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-    }
-    if (/^\d{4}-\d{2}-\d{2}/.test(dStr)) {
-      return dStr.slice(0, 10);
-    }
-    const dt = new Date(dStr);
-    if (!isNaN(dt.getTime())) {
-      return getLocalDateISO(dt);
-    }
-    return '';
-  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
 
   function populateTipos(){
     const cat = document.getElementById('fCategoria').value;
@@ -344,7 +350,6 @@
     sel.innerHTML = TIPOS[cat].map(t => `<option value="${t}">${t}</option>`).join('');
     toggleOutro();
   }
-
   function toggleOutro(){
     const wrap = document.getElementById('fTipoOutroWrap');
     wrap.style.display = document.getElementById('fTipo').value === 'Outro' ? 'block' : 'none';
@@ -358,6 +363,15 @@
       btn.classList.add('selected');
     });
   });
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', async ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-'+tab.dataset.tab).classList.add('active');
+      if(tab.dataset.tab === 'painel') await renderDashboard();
+    });
+  });
 
   function updateClock(){
     const now = new Date();
@@ -366,7 +380,7 @@
     });
   }
   updateClock();
-  setInterval(updateClock, 30000);
+  setInterval(updateClock, 1000*30);
 
   async function loadOccurrences(){
     try {
@@ -381,11 +395,16 @@
   }
 
   async function saveOccurrence(occ){
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(occ)
-    });
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(occ)
+      });
+    } catch(e) {
+      console.error('Erro ao salvar no Google Sheets:', e);
+      throw e;
+    }
   }
 
   document.getElementById('btnSalvar').addEventListener('click', async ()=>{
@@ -394,7 +413,7 @@
     const categoria = document.getElementById('fCategoria').value;
     let tipo = document.getElementById('fTipo').value;
     const tipoOutro = document.getElementById('fTipoOutro').value.trim();
-    const data = document.getElementById('fData').value || getLocalDateISO();
+    const data = document.getElementById('fData').value || todayISO();
     const responsavel = document.getElementById('fResponsavel').value.trim();
     const vaga = document.getElementById('fVaga').value.trim();
     const descricao = document.getElementById('fDescricao').value.trim();
@@ -409,7 +428,7 @@
 
     btn.disabled = true;
     msg.style.color='var(--muted)';
-    msg.textContent = 'Salvando...';
+    msg.textContent = 'Salvando na nuvem…';
 
     const occ = {
       id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
@@ -421,14 +440,15 @@
       await saveOccurrence(occ);
       await loadOccurrences();
       msg.style.color='var(--green)';
-      msg.textContent = 'Ocorrência registrada!';
+      msg.textContent = 'Ocorrência registrada com sucesso!';
       document.getElementById('fDescricao').value = '';
       document.getElementById('fVaga').value = '';
       document.getElementById('fResponsavel').value = '';
-      document.getElementById('fData').value = getLocalDateISO();
+      document.getElementById('fData').value = todayISO();
       
       updateStatusStrip();
       renderCards();
+      renderCharts();
       renderLog();
     }catch(e){
       msg.style.color='var(--red)';
@@ -439,39 +459,12 @@
     }
   });
 
-  // CONTADORES CORRIGIDOS COM AS DATAS LOCAIS
   function updateStatusStrip(){
-    const now = new Date();
-    const todayISO = getLocalDateISO(now);
-
-    // Segunda-feira da semana atual (Segunda = 1, Domingo = 0)
-    const dayOfWeek = now.getDay();
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diffToMonday);
-    const mondayISO = getLocalDateISO(monday);
-
-    // Há 30 dias atrás
-    const date30Ago = new Date(now);
-    date30Ago.setDate(now.getDate() - 30);
-    const date30AgoISO = getLocalDateISO(date30Ago);
-
-    let countHoje = 0;
-    let countSemana = 0;
-    let count30Dias = 0;
-
-    occurrences.forEach(o => {
-      const occISO = normalizeDateStr(o.data || o.criadoEm);
-      if (!occISO) return;
-
-      if (occISO === todayISO) countHoje++;
-      if (occISO >= mondayISO && occISO <= todayISO) countSemana++;
-      if (occISO >= date30AgoISO && occISO <= todayISO) count30Dias++;
-    });
-
-    document.getElementById('statHoje').textContent = countHoje;
-    document.getElementById('statSemana').textContent = countSemana;
-    document.getElementById('stat30Dias').textContent = count30Dias;
+    const today = todayISO();
+    const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+    document.getElementById('statHoje').textContent = occurrences.filter(o=>o.data===today).length;
+    document.getElementById('statSemana').textContent = occurrences.filter(o=>o.data>=weekAgo).length;
+    document.getElementById('statTotal').textContent = occurrences.length;
   }
 
   function renderCards(){
@@ -487,6 +480,78 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  function renderCharts(){
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js ainda não foi carregado.');
+      return;
+    }
+
+    const tipoCounts = {};
+    occurrences.forEach(o=>{ tipoCounts[o.tipo] = (tipoCounts[o.tipo]||0)+1; });
+    const tipoEntries = Object.entries(tipoCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+    const catCounts = {"Candidatos":0,"Problemas técnicos":0,"Comunicação":0,"Operacionais":0};
+    occurrences.forEach(o=>{ if(catCounts[o.categoria]!==undefined) catCounts[o.categoria]++; });
+
+    const days = [];
+    for(let i=13;i>=0;i--){
+      const d = new Date(Date.now()-i*86400000);
+      days.push(d.toISOString().slice(0,10));
+    }
+    const dayCounts = days.map(d=> occurrences.filter(o=>o.data===d).length);
+
+    const fontColor = '#666666';
+    const gridColor = 'rgba(0,0,0,0.06)';
+    Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+    Chart.defaults.font.size = 11;
+
+    if(charts.tipo) charts.tipo.destroy();
+    charts.tipo = new Chart(document.getElementById('chartTipo'), {
+      type:'bar',
+      data:{ labels: tipoEntries.map(e=>e[0]), datasets:[{
+        data: tipoEntries.map(e=>e[1]),
+        backgroundColor:'#3483FA', borderRadius:5, maxBarThickness:26
+      }]},
+      options:{
+        indexAxis:'y', plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:fontColor,precision:0},grid:{color:gridColor}},
+          y:{ticks:{color:fontColor,font:{size:10.5}},grid:{display:false}}
+        }
+      }
+    });
+
+    if(charts.categoria) charts.categoria.destroy();
+    charts.categoria = new Chart(document.getElementById('chartCategoria'), {
+      type:'doughnut',
+      data:{ labels:Object.keys(catCounts), datasets:[{
+        data:Object.values(catCounts),
+        backgroundColor:['#FF4545','#3483FA','#2D3277','#F58220'],
+        borderColor:'#ffffff', borderWidth:2
+      }]},
+      options:{
+        cutout:'62%',
+        plugins:{legend:{position:'bottom',labels:{color:fontColor,boxWidth:10,padding:12,font:{size:10.5}}}}
+      }
+    });
+
+    if(charts.dia) charts.dia.destroy();
+    charts.dia = new Chart(document.getElementById('chartDia'), {
+      type:'line',
+      data:{ labels: days.map(d=>d.slice(5).split('-').reverse().join('/')), datasets:[{
+        data: dayCounts, borderColor:'#3483FA', backgroundColor:'rgba(52,131,250,0.12)',
+        fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#3483FA'
+      }]},
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:fontColor},grid:{display:false}},
+          y:{ticks:{color:fontColor,precision:0},grid:{color:gridColor},beginAtZero:true}
+        }
+      }
+    });
   }
 
   function renderLog(){
@@ -526,13 +591,22 @@
 
   document.getElementById('filterCategoria').addEventListener('change', renderLog);
 
+  async function renderDashboard(){
+    await loadOccurrences();
+    updateStatusStrip();
+    renderCards();
+    renderCharts();
+    renderLog();
+  }
+
   // Inicialização
-  document.getElementById('fData').value = getLocalDateISO();
+  document.getElementById('fData').value = todayISO();
   populateTipos();
   (async () => {
     await loadOccurrences();
     updateStatusStrip();
     renderCards();
+    renderCharts();
     renderLog();
   })();
   </script>
