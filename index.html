@@ -6,6 +6,7 @@
 <title>Registro de Ocorrências — Processo Seletivo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     /* Paleta Mercado Livre */
@@ -147,6 +148,19 @@
 
   <div class="panel">
     <h2 class="panel-heading">Nova ocorrência</h2>
+
+    <div id="loginArea" style="text-align: center; padding: 20px; background: var(--surface-2); border-radius: 8px; margin-bottom: 20px;">
+      <p style="font-size: 14px; color: var(--muted); margin-top: 0;">Faça login para registrar uma ocorrência.</p>
+      <div id="g_id_onload"
+           data-client_id="315923477453-9ij8ib9rkplr8dofdps5rohchjbm44mm.apps.googleusercontent.com"
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-size="large"></div>
+    </div>
+
     <div class="form-grid">
       <div class="field">
         <label>Categoria</label>
@@ -200,6 +214,20 @@
 </div>
 
 <script>
+let googleToken = sessionStorage.getItem('g_token');
+
+if (googleToken) {
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById('loginArea').style.display = 'none';
+  });
+}
+
+function handleCredentialResponse(response) {
+  googleToken = response.credential;
+  sessionStorage.setItem('g_token', googleToken);
+  document.getElementById('loginArea').style.display = 'none';
+}
+
 const API_URL = "https://script.google.com/macros/s/AKfycbzhXlRwCbWfd86e-VeVPoGTzH4zKSzAsu6fk-5B_mIPCn84h2aP7dUl_8_5RTKJRqci/exec";
 
 const TIPOS = {
@@ -338,16 +366,14 @@ async function loadOccurrences(){
 }
 
 async function saveOccurrence(occ){
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(occ)
-    });
-  } catch(e) {
-    console.error('Erro ao salvar no Google Sheets:', e);
-    throw e;
-  }
+  occ.token = googleToken;
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(occ)
+  });
+  const json = await res.json();
+  if (json.erro) throw new Error(json.erro);
 }
 
 document.getElementById('btnSalvar').addEventListener('click', async ()=>{
